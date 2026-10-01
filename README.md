@@ -5,6 +5,30 @@ asks: a LoRA fine-tune of [Kev-4B](https://github.com/jaredpalmer/kev) on shell
 commands, served locally as a System One (`/v1/systemone`) endpoint that rippy's
 `[jev]` client talks to unchanged.
 
+Weights: [Risethagain/rippy-kev-4b](https://huggingface.co/Risethagain/rippy-kev-4b).
+Results: [RESULTS.md](RESULTS.md).
+
+## Use it with rippy
+
+```sh
+git clone https://github.com/jaredpalmer/kev && cd kev && uv sync --extra serve
+uv run --extra serve python -m kev.serve --run Risethagain/rippy-kev-4b --port 8012
+```
+
+```toml
+# ~/.rippy/config.toml (global config only; rippy ignores [jev] in project configs)
+[jev]
+enabled = true
+endpoint = "http://127.0.0.1:8012/v1/systemone"
+model = "kev-latest"
+api-key-env = "RIPPY_KEV_KEY"   # any non-empty value; the local server needs no key
+timeout-ms = 2000
+```
+
+Needs a rippy build with the `jev` feature. v1 was trained on question set
+`q2`; check `rippy jev --json '<cmd>'` reports the same version before relying
+on it.
+
 ## Pipeline
 
 | Step | Script | Output |
