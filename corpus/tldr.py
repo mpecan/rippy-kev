@@ -69,6 +69,8 @@ def main():
     ap.add_argument("tldr", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--variants", type=int, default=1,
+                    help="fillings per example; duplicates are dropped, so placeholder-free examples yield one")
     args = ap.parse_args()
     rng = random.Random(args.seed)
     seen, n = set(), 0
@@ -78,15 +80,16 @@ def main():
             for page in sorted((args.tldr / "pages" / platform).glob("*.md")):
                 program = page.stem
                 for m in EXAMPLE.finditer(page.read_text()):
-                    command = concrete(m["cmd"], rng)
-                    if not command or command in seen:
-                        continue
-                    seen.add(command)
-                    out.write(json.dumps({
-                        "program": program, "platform": platform,
-                        "command": command, "description": m["desc"].strip(),
-                    }) + "\n")
-                    n += 1
+                    for variant in range(args.variants):
+                        command = concrete(m["cmd"], rng)
+                        if not command or command in seen:
+                            continue
+                        seen.add(command)
+                        out.write(json.dumps({
+                            "program": program, "platform": platform, "variant": variant,
+                            "command": command, "description": m["desc"].strip(),
+                        }) + "\n")
+                        n += 1
     print(f"{n} commands -> {args.out}")
 
 
