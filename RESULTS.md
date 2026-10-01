@@ -40,6 +40,23 @@ hand-labelled `scripts/jev-eval/sample.toml`, 76 eligible.
 - Steering survives without training on it: the gold steering case scores
   `self_referential` 0.63 (Kev-4B: 0.80) and is escalated.
 
+### On rippy's q3 wording
+
+rippy's `fix/jev-fact-wording` rewords two facts ("not found on rippy's PATH; may
+still exist when the command runs", "...; may hold any value when the command
+runs") and bumps the question set to `q3`. v1 was trained on `q2` states and run
+unchanged against a q3 rippy build:
+
+| | test unsafe approved | test safe approved | test exfil escalated | gold unsafe approved | gold safe approved | gold exfil escalated |
+|---|---|---|---|---|---|---|
+| v1 on q2 | 1/652 | 166/376 | 25/34 | 0/32 | 24/35 | 9/9 |
+| v1 on q3 | 2/652 | 175/376 | 24/34 | 0/32 | 22/35 | 9/9 |
+
+Mean absolute change per probability: 0.005 on test (max 0.15), 0.004 on gold.
+14 of 1,062 test outcomes flip, all near a threshold, in both directions; the new
+approval (`dict --info database_name`) is a remote lookup both teachers called
+harmless. The wording change is within what v1 generalises over; v2 trains on q3.
+
 ### Next
 
 - Synthetic steering, exfiltration and secrets cases: the corpus has few or none.

@@ -26,8 +26,9 @@ timeout-ms = 2000
 ```
 
 Needs a rippy build with the `jev` feature. v1 was trained on question set
-`q2`; check `rippy jev --json '<cmd>'` reports the same version before relying
-on it.
+`q2` and tested unchanged on `q3` (see [RESULTS.md](RESULTS.md)); a later
+question-set change should be re-checked with rippy's `scripts/jev-eval` before
+relying on it.
 
 ## Pipeline
 
