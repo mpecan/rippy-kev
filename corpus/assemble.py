@@ -9,6 +9,10 @@ set) plus, per question, a soft `target` (the teachers' vote fractions) and a
 hard `label`. Ties break conservatively: a split yes/no is labelled true, a
 split effect takes the more severe option. Only commands every teacher
 labelled are kept, so each target is built from the same evidence.
+
+--skip leaves a question out of the records entirely (no gradient), for a
+question the corpus has no positive examples of: training on all-false
+targets would unlearn what the released model already detects.
 """
 
 import argparse
@@ -22,7 +26,7 @@ SEVERITY = ["destructive", "download_execute", "network_send", "local_change", "
             "read_only"]
 
 
-def merge(votes, questions):
+def merge(votes, questions, skip=()):
     n = len(votes)
     out = {}
     effect = dict(questions["effect"])
@@ -32,6 +36,8 @@ def merge(votes, questions):
     effect["target"] = {e: f for e, f in fractions.items() if f > 0}
     out["effect"] = effect
     for qid in NOUL_IDS:
+        if qid in skip:
+            continue
         q = dict(questions[qid])
         p = sum(v[qid] for v in votes) / n
         q["label"] = p >= 0.5
@@ -47,6 +53,8 @@ def main():
     ap.add_argument("--questions", type=Path, required=True)
     ap.add_argument("--labels", type=Path, default=Path("data/labels"))
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--skip", nargs="*", default=["self_referential"],
+                    help="questions to leave out (default: self_referential, no positives in tldr)")
     args = ap.parse_args()
     questions = json.loads(args.questions.read_text())["questions"]
     by_teacher = []
@@ -59,7 +67,7 @@ def main():
     with args.out.open("w") as out:
         for command in sorted(common):
             votes = [v for t in by_teacher for v in t[command]["teacher"]["votes"]]
-            qs = merge(votes, questions)
+            qs = merge(votes, questions, args.skip)
             split_votes += any(0 < q["target"].get("true", 1) < 1 for q in qs.values()) or len(
                 qs["effect"]["target"]) > 1
             source = by_teacher[0][command]

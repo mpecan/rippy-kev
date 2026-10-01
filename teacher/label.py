@@ -81,7 +81,10 @@ def request_body(args, text):
     }
     if args.openrouter:
         body["reasoning"] = {"effort": args.reasoning_effort or "medium"}
-        body["provider"] = {"data_collection": "deny"}
+        body["provider"] = {"data_collection": "deny", "sort": "throughput"}
+        if args.max_price:
+            prompt, completion = (float(x) for x in args.max_price.split(","))
+            body["provider"]["max_price"] = {"prompt": prompt, "completion": completion}
         body["usage"] = {"include": True}
     else:
         body["chat_template_kwargs"] = {"enable_thinking": True}
@@ -159,6 +162,8 @@ def main():
     ap.add_argument("--base-url", required=True,
                     help="up to and including /v1, e.g. https://openrouter.ai/api/v1")
     ap.add_argument("--api-key-env", default="", help="env var holding a bearer key")
+    ap.add_argument("--max-price", default="",
+                    help="OpenRouter: 'prompt,completion' USD per million tokens; pricier providers are skipped")
     ap.add_argument("--max-cost", type=float, default=None, help="USD; stop starting new calls past it")
     ap.add_argument("--model", required=True)
     ap.add_argument("--out", type=Path, required=True)
