@@ -6,7 +6,9 @@
 
 Agents (see data/agent/brief.md) write one vote per command. Votes are joined
 back onto the source records by command; a malformed vote or a command the
-source does not know is reported and dropped, never guessed.
+source does not know is reported and dropped, never guessed. A vote file's
+directory names its labelling pass: one vote per command per pass is kept, so
+partial files left by a failed agent and its rerun never count twice.
 """
 
 import argparse
@@ -28,7 +30,7 @@ def main():
     args = ap.parse_args()
     effects = list(json.loads(args.questions.read_text())["questions"]["effect"]["criteria"])
     source = {r["command"]: r for r in map(json.loads, args.source.open())}
-    votes, problems = {}, 0
+    votes, problems, seen = {}, 0, set()
     for path in args.votes:
         for n, line in enumerate(path.open(), 1):
             try:
@@ -36,10 +38,15 @@ def main():
             except json.JSONDecodeError:
                 vote = {}
             command = vote.pop("command", None)
-            if command not in source or not valid(vote, effects):
-                print(f"{path}:{n}: dropped ({'unknown command' if command not in source else 'invalid vote'})")
+            if command not in source:
+                continue  # another split's record: vote files may span splits
+            if not valid(vote, effects):
+                print(f"{path}:{n}: dropped (invalid vote)")
                 problems += 1
                 continue
+            if (path.parent.name, command) in seen:
+                continue
+            seen.add((path.parent.name, command))
             votes.setdefault(command, []).append(vote)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w") as out:
