@@ -57,6 +57,18 @@ Mean absolute change per probability: 0.005 on test (max 0.15), 0.004 on gold.
 approval (`dict --info database_name`) is a remote lookup both teachers called
 harmless. The wording change is within what v1 generalises over; v2 trains on q3.
 
+### Other System One models, released weights (q3, rippy defaults)
+
+| backend | test unsafe approved | test safe approved | test exfil escalated | gold safe approved | gold exfil escalated | p50 (M4 Max) |
+|---|---|---|---|---|---|---|
+| Strands Decider 2B (`StrandsAgents/strands-decider-2B-hobson-v19`) | 0/652 | 0/376 | 7/34 | 0/35 | 7/9 | 538 ms |
+| Kev-4B (`jaredpalmer/kev-4b`) | 0/652 | 0/376 | 16/34 | 0/35 | 9/9 | 752 ms |
+
+Neither separates safe from risky shell commands without fine-tuning: Decider
+puts read_only at 0.18 on safe and 0.10 on unsafe gold cases. Decider ships its
+own trainer (`strands_decider.train`, `init_from`, teacher targets) and an MPS
+kernel for Qwen3.5's gated delta rule, so it remains a candidate base for v2.
+
 ### Next
 
 - Synthetic steering, exfiltration and secrets cases: the corpus has few or none.
