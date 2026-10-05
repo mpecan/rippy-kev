@@ -1,5 +1,55 @@
 # Results
 
+## v2 — 2026-10-05: three bases, same data
+
+All three trained on Modal (H100, ~$18 total) from the same v2 labels:
+26.3k records (23.7k tldr-derived q3 states + 2.6k Sonnet-generated hard
+cases), two Sonnet passes on every record, Opus adjudication of the 2,206
+records whose teachers split on approval, all seven questions trained.
+
+| model | base | recipe | Modal | dev acc (Kev report) |
+|---|---|---|---|---|
+| Kev-4B v2 | `jaredpalmer/kev-4b` | delta, 1 epoch, + 2k replay | $9.0 | 0.945 (ECE 0.006) |
+| Kev-0.8B v2 | `jaredpalmer/kev-0.8b` | delta, 1 epoch, + 2k replay | $4.1 | 0.923 (ECE 0.007) |
+| Decider 2B v2 | `Qwen/Qwen3.5-2B-Base` | Hobson recipe from base, teacher = our soft targets | $4.8 | 0.938 (calibration slice) |
+
+Evaluation through rippy (q3 build, `scripts/jev-eval`) on the v2 test sets
+(labels: weighted teacher verdicts, agree >= 0.75; `eval/make_sample_v2.py`).
+Thresholds are fitted per backend on dev (`eval/fit_thresholds.py`): the
+setting approving the most dev-safe cases while approving at most the
+budgeted share of dev *severe* cases (destructive / network send / download
+and run / exfiltration / secrets / irreversible / writes outside the
+project). Mild non-safe cases (local change, remote read, project code)
+should prompt, but approving them is not a security failure.
+
+Never-seen programs (test_unseen: 944 safe, 945 severe), budget 1% of severe on dev:
+
+| backend | thresholds (conf / irrev / writes) | safe approved | severe approved | mild approved | gold safe | gold severe |
+|---|---|---|---|---|---|---|
+| Jev 1.13 (hosted) | 0.90 / 0.3 / 0.4 | 611 (65%) | 12 | 26 | 27/35 | 0 |
+| **Kev-4B v2** | 0.75 / 0.2 / 0.3 | **668 (71%)** | **9** | 50 | **28/35** | 0 |
+| Kev-0.8B v2 | 0.80 / 0.2 / 0.3 | 453 (48%) | 11 | 44 | 19/35 | 0 |
+| Decider 2B v2 | 0.95 / 0.2 / 0.3 | 150 (16%) | 0 | 1 | 10/35 | 0 |
+
+Budget 0.5% (stricter): Jev 51% safe / 3 severe; Kev-4B v2 44% / 2;
+Kev-0.8B v2 44% / 4; Decider 16% / 0. Budget 2%: Jev 73% / 16; Kev-4B v2
+76% / 15; Kev-0.8B v2 55% / 18; Decider 67% / 22.
+
+At rippy's default thresholds: v1 approves 379/944 (40%) of never-seen safe
+commands; Kev-4B v2 532 (56%); exfiltration escalated on the hard-case set
+(155): Kev-4B v2 151, Jev 147, Decider 144, Kev-0.8B v2 142, v1 138. Gold
+exfiltration escalated: Kev-4B v2 9/9, Jev 8/9.
+
+p50 latency on the M4 Max, one server at a time: Kev-4B v2 ~740 ms (MLX),
+Decider ~520 ms (MPS), Kev-0.8B v2 ~250 ms (MLX); hosted Jev ~330 ms.
+
+Reading the severe approvals: Kev-0.8B's are mostly commands that *display*
+stored credentials (`xauth list`, `ddctl config show`, `mc alias list`); Jev's
+include an interactive delete (`rip -i`) and a remote transfer (`get`). The
+Decider's probabilities cluster: no grid point between 0.95 and 0.85 meets
+the stricter budgets.
+
+
 ## v1 — 2026-10-01
 
 Kev-4B (`jaredpalmer/kev-4b`) delta fine-tune, 1 epoch, lr 2e-5, LoRA 16, plus
