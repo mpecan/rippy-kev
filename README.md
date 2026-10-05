@@ -5,8 +5,16 @@ asks: a LoRA fine-tune of [Kev-4B](https://github.com/jaredpalmer/kev) on shell
 commands, served locally as a System One (`/v1/systemone`) endpoint that rippy's
 `[jev]` client talks to unchanged.
 
-Weights: [Risethagain/rippy-kev-4b](https://huggingface.co/Risethagain/rippy-kev-4b).
-Results: [RESULTS.md](RESULTS.md).
+Weights (Hugging Face, Apache-2.0):
+
+| model | use | p50 on M4 Max | recommended `[jev]` thresholds |
+|---|---|---|---|
+| [Risethagain/rippy-kev-4b](https://huggingface.co/Risethagain/rippy-kev-4b) (`v2`) | default | ~0.75 s | `min-confidence = 0.75`, `max-irreversible = 0.2`, `max-writes-outside = 0.3` (strict: `min-confidence = 0.95`) |
+| [Risethagain/rippy-kev-0.8b](https://huggingface.co/Risethagain/rippy-kev-0.8b) (`v2`) | low latency; approves fewer safe commands, read its caveats | ~0.25 s | `min-confidence = 0.85`, `max-irreversible = 0.2`, `max-writes-outside = 0.3` |
+
+Results: [RESULTS.md](RESULTS.md). On never-seen programs, at matched risk,
+rippy-kev-4b v2 approves more safe commands than hosted Jev 1.13 with fewer
+severe approvals.
 
 ## Use it with rippy
 
@@ -23,12 +31,14 @@ endpoint = "http://127.0.0.1:8012/v1/systemone"
 model = "kev-latest"
 api-key-env = "RIPPY_KEV_KEY"   # any non-empty value; the local server needs no key
 timeout-ms = 2000
+min-confidence = 0.75
+max-irreversible = 0.2
+max-writes-outside = 0.3
 ```
 
-Needs a rippy build with the `jev` feature. v1 was trained on question set
-`q2` and tested unchanged on `q3` (see [RESULTS.md](RESULTS.md)); a later
-question-set change should be re-checked with rippy's `scripts/jev-eval` before
-relying on it.
+Needs a rippy build with the `jev` feature. v2 is trained on question set `q3`
+(rippy's fact wording from PR #216); re-check a later question-set change with
+rippy's `scripts/jev-eval` before relying on it.
 
 ## Pipeline
 
