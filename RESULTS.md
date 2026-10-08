@@ -26,7 +26,7 @@ while kev.serve shares the state prefix. With llama-server's defaults
 over a long run (one question 0.16 s fresh, >1 s after ~15k) and RSS reached
 11 GB; `-c 4096 --cache-ram 0 --ctx-checkpoints 0` keeps RSS at ~3 GB.
 
-Published: Q8_0 GGUFs in both Hugging Face repos. Recommendation: kev.serve on
+Q8_0 GGUFs are published in both Hugging Face repos. Recommendation: kev.serve on
 Apple silicon; the GGUF for Linux / CPU / CUDA or a Python-free deployment.
 
 ## v2 — 2026-10-05: three bases, same data
@@ -72,9 +72,14 @@ exfiltration escalated: Kev-4B v2 9/9, Jev 8/9.
 p50 latency on the M4 Max, one server at a time: Kev-4B v2 ~740 ms (MLX),
 Decider ~520 ms (MPS), Kev-0.8B v2 ~250 ms (MLX); hosted Jev ~330 ms.
 
-Reading the severe approvals: Kev-0.8B's are mostly commands that *display*
-stored credentials (`xauth list`, `ddctl config show`, `mc alias list`); Jev's
-include an interactive delete (`rip -i`) and a remote transfer (`get`). The
+Reading the severe approvals (balanced settings): both rippy-kev models approve
+a few config/settings commands (`blackfire config`, `mods --settings`,
+`accelerate config`) and editors or viewers pointed at files outside the
+project (`kak /etc/…`, `wordgrinder ~/Documents/…`), which the teachers mark as
+writes outside the project. Both approved `xauth list` and `mc alias list`,
+which print stored credentials (seen and hard-case sets); the 0.8B also
+approved `ddctl config show`. Jev's include an interactive delete (`rip -i`)
+and a remote transfer (`get`). The
 Decider's probabilities cluster: no grid point between 0.95 and 0.85 meets
 the stricter budgets.
 
