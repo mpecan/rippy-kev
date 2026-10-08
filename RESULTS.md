@@ -1,5 +1,34 @@
 # Results
 
+## v2 on llama.cpp — 2026-10-08
+
+llama.cpp 0.6.0 (build 11429) serves `POST /v1/systemone` natively, and its
+`KevModel` converter (`conversion/lev.py`) turns a Kev checkpoint into a GGUF:
+it merges the LoRA into the base and embeds the pointer head and the fitted
+temperature. Both v2 checkpoints convert unchanged.
+
+At the published balanced thresholds (`eval/compare_gguf.py`, test_unseen 2,947 + gold):
+
+| file | mean / max |Δp| vs kev.serve | flips | never-seen safe | severe | gold safe |
+|---|---|---|---|---|---|
+| Kev-4B v2 kev.serve | – | – | 668/944 | 9 | 28/35 |
+| Kev-4B v2 bf16 GGUF | 0.001 / 0.06 | 8 | 667/944 | 6 | 28/35 |
+| Kev-4B v2 Q8_0 GGUF | 0.001 / 0.07 | 8 | 669/944 | 8 | 28/35 |
+| Kev-4B v2 Q4_K_M GGUF (partial) | 0.011 / 0.60 | 62 | 510/727 | 8 | 28/35 |
+| Kev-0.8B v2 kev.serve | – | – | 453/944 | 11 | 19/35 |
+| Kev-0.8B v2 Q8_0 GGUF | 0.002 / 0.10 | 14 | 448/944 | 8 | 19/35 |
+
+Raw 7-question requests on an M4 Max (p50): Kev-4B kev.serve (MLX bf16) 836 ms
+vs llama.cpp Q4_K_M 1.2 s (2.3 s with `--parallel 8`); Kev-0.8B kev.serve 137
+ms vs llama.cpp Q8_0 ~225 ms. llama.cpp evaluates the questions one by one,
+while kev.serve shares the state prefix. With llama-server's defaults
+(`--cache-ram` 8 GiB, context checkpoints, full context) latency kept growing
+over a long run (one question 0.16 s fresh, >1 s after ~15k) and RSS reached
+11 GB; `-c 4096 --cache-ram 0 --ctx-checkpoints 0` keeps RSS at ~3 GB.
+
+Published: Q8_0 GGUFs in both Hugging Face repos. Recommendation: kev.serve on
+Apple silicon; the GGUF for Linux / CPU / CUDA or a Python-free deployment.
+
 ## v2 — 2026-10-05: three bases, same data
 
 All three trained on Modal (H100, ~$18 total) from the same v2 labels:

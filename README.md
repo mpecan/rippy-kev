@@ -36,6 +36,15 @@ max-irreversible = 0.2
 max-writes-outside = 0.3
 ```
 
+Without Python, or off Apple silicon: both repos also carry a Q8_0 GGUF for
+llama.cpp (build 11361+, `POST /v1/systemone`):
+
+```sh
+llama-server -m rippy-kev-4b-v2-Q8_0.gguf --port 8012 -ngl 99 --parallel 1 -c 4096 --cache-ram 0 --ctx-checkpoints 0
+```
+
+Same thresholds. On an M4 Max kev.serve is faster; see [RESULTS.md](RESULTS.md).
+
 Needs a rippy build with the `jev` feature. v2 is trained on question set `q3`
 (rippy's fact wording from PR #216); re-check a later question-set change with
 rippy's `scripts/jev-eval` before relying on it.
